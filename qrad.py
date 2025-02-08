@@ -61,3 +61,7 @@ def I(seg):
 
 def Q_rad(seg):
     return Tau_t*I(seg)*A_f
+
+def Q_rad_preload():
+    with open("qrad.txt", 'r') as file:
+        return [float(x) for x in str(file.read()[1:-1]).split(',')]

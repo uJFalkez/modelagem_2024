@@ -10,6 +10,12 @@ m_ar = 8.13e-2          # m³/s
 Cp_ar = 1.006           # kJ/kgK
 rho_ar = 1.2046         # kg/m³
 
+Cp_nh3 = 2.13           # kJ/kgK
+
+#A_T = 10               # m²
+#U_T = 120              # W/m²K
+NUT = (10*120)/(Cp_ar*m_ar)
+
 # R_solo
 # e_s = 0.1             # m
 # h_s = 15              # w/m²K
@@ -25,7 +31,7 @@ def R_teto(T3, Tinf):
     L = A/P             # m
     beta = 1/Tinf
     
-    Gr = (g*beta*(T3-Tinf)*(L**3))/v**2
+    Gr = (g*beta*abs(T3-Tinf)*(L**3))/v**2
     Ra = Gr*Pr
     Nu = 0.59*Ra**0.25
     h_t = (Nu*k)/L
@@ -42,7 +48,7 @@ def R_e(T1, T2):        # T1 embaixo, T2 em cima
     L = A/P             # m
     beta = 1/T2
     
-    Gr = (g*beta*(T1-T2)*(e_1+e_2)**3)/v**2
+    Gr = (g*beta*abs(T2-T1)*(e_1+e_2)**3)/v**2
     Nu = (0.42*(Gr*Pr)**0.25)*(Pr**0.012)*((e_1+e_2)/L)**0.3
     h_e = (Nu*k)/(e_1+e_2)
     
@@ -59,3 +65,4 @@ C_2 = Cp_ar*rho_ar*V_2
 
 # C_3
 C_3 = Cp_ar*rho_ar*V_3
+
