@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-Tau_t = 0.89
+Tau_t = 0.23
 offset_dia0 = 172
 A_f = 50
 
@@ -30,6 +30,7 @@ def interpolate(s,x,y):
     return ((y1-y0)*((s-x0)/(x1-x0)))+y0
 
 def get_d(d):
+    d = d//365
     i = days.index([a for a in days if d<=a][0])
     d0 = days[i-1]
     d1 = days[i]

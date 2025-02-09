@@ -1,3 +1,5 @@
+import numpy as np
+
 g = 9.81                # m/s²
 A = 50                  # m²
 P = 30                  # m
@@ -20,7 +22,7 @@ NUT = (10*120)/(Cp_ar*m_ar)
 # e_s = 0.1             # m
 # h_s = 15              # w/m²K
 # k_s = 0.48            # W/mK
-R_solo = 1/(15*50) + 0.1/(0.48*50)
+R_solo = 1/(15*50) + 0.1/(0.45*50)
 
 # R_teto
 def R_teto(T3, Tinf):
@@ -46,7 +48,7 @@ def R_e(T1, T2):        # T1 embaixo, T2 em cima
     e_2 = 0.1           # m
     k = 2.588e-2        # W/mK
     L = A/P             # m
-    beta = 1/T2
+    beta = 1/T1
     
     Gr = (g*beta*abs(T2-T1)*(e_1+e_2)**3)/v**2
     Nu = (0.42*(Gr*Pr)**0.25)*(Pr**0.012)*((e_1+e_2)/L)**0.3
@@ -58,11 +60,13 @@ def R_e(T1, T2):        # T1 embaixo, T2 em cima
 R_31 = m_ar*Cp_ar
 
 # C_1
-C_1 = Cp_ar*rho_ar*V_1
+def C_1(T, Tinf):
+    return (Cp_ar*rho_ar*V_1)#*np.exp(-T/Tinf)
 
 # C_2
-C_2 = Cp_ar*rho_ar*V_2
+def C_2(T, Tinf):
+    return (Cp_ar*rho_ar*V_2)#*np.exp(-T/Tinf)
 
 # C_3
-C_3 = Cp_ar*rho_ar*V_3
-
+def C_3(T, Tinf):
+    return (Cp_ar*rho_ar*V_3)#*np.exp(-T/Tinf)
