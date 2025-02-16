@@ -73,9 +73,9 @@ R_12_lin   = sum([R_e(T_1_minmax[0],T_2_minmax[0]), R_e(T_1_minmax[0],T_2_minmax
 R_23_lin   = sum([R_e(T_2_minmax[0],T_3_minmax[0]), R_e(T_2_minmax[0],T_3_minmax[1]), R_e(T_2_minmax[1],T_3_minmax[0]), R_e(T_2_minmax[1],T_3_minmax[1])])/4
 R_teto_lin = sum([R_teto(T_3_minmax[0], Tinf_0), R_teto(T_3_minmax[1], Tinf_0)])/2
 
-A11 = -(1/C_1)*(1/R_solo + 1/R_12_lin + 1/R_31 + m_ar*Cp_ar*eps)
+A11 = -(1/C_1)*(1/R_solo + 1/R_12_lin + 1/R_31)
 A21 = 1/(C_1*R_12_lin)
-A31 = -(1/C_1)*(1/R_31 - m_ar*Cp_ar*eps)
+A31 = (1/C_1)*(1/R_31 - m_ar*Cp_ar*eps)
 A41 = 0
 
 A12 = 1/(C_2*R_12_lin)
@@ -88,9 +88,9 @@ A23 = 1/(C_3*R_23_lin)
 A33 = -(1/C_3)*(1/R_teto_lin+1/R_31+1/R_23_lin)
 A43 = 0
 
-A14 = -eps*C_mm
-A24 = 0
-A34 = eps*C_mm
+A14 = C_mm*(1/(C_3*R_31)+1/C_1*(1/R_solo+1/R_12_lin+1/R_31))
+A24 = C_mm*(1/(C_3*R_23_lin)-1/(C_1*R_12_lin))
+A34 = C_mm*(-1/C_3*(1/R_teto_lin+1/R_31+1/R_23_lin)-1/C_1*(1+R_31-m_ar*Cp_ar*eps))
 A44 = 0
 
 B11 = m_ar*Cp_ar*eps/C_1
@@ -102,14 +102,14 @@ B22 = 0
 B31 = 0
 B32 = 1/(C_3*R_teto_lin)
 
-B41 = 0
-B42 = 0
+B41 = -C_mm*m_ar*Cp_ar*eps/C_1
+B42 = C_mm*(1/(C_3*R_teto_lin)-1/(C_1*R_solo))
 
 
 A = np.array([[A11, A12, A13, A14],
-              [A12, A22, A32, A42],
-              [A13, A23, A33, A43],
-              [A14, A24, A34, A44]])
+              [A21, A22, A23, A24],
+              [A31, A32, A33, A34],
+              [A41, A42, A43, A44]])
 
 B = np.array([[B11, B12],
               [B21, B22],
