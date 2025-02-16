@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-Tau_t = 0.23
+Tau_t = 0.12
 offset_dia0 = 172
 A_f = 50
 

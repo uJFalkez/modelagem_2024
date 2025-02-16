@@ -14,14 +14,13 @@ n = 1000000
 def circuit_dynamics(t, y):
     T1, T2, T3, TNH3s = y
     
-    TNH3 = TNH3_0 + 5*np.sin(np.pi*t/8640)
-    
+    TNH3 = TNH3_0
     Tinf = (10 + 273) + 3*np.sin(np.pi*t/86400) + 10*np.sin(2*np.pi*(t//86400)/365)
     
     q_solo = (T1 - Tinf)/R_solo
     q_teto = (Tinf - T3)/R_teto(T3,Tinf)
     q_rad  = Q_rad(np.floor(t))
-    q_i    = m_ar*Cp_ar*eps*(T3-TNH3)*1000
+    q_i    = m_ar*Cp_ar*(T3-TNH3)*1000*eps
     q_12   = (T1-T2)/R_e(T1,T2)
     q_23   = (T2-T3)/R_e(T2,T3)
     q_31   = (T3-T1)/R_31
@@ -33,7 +32,7 @@ def circuit_dynamics(t, y):
     dT1_dt = (1/n) * q_C1 / C_1
     dT2_dt = (1/n) * q_C2 / C_2
     dT3_dt = (1/n) * q_C3 / C_3
-    dTNH3s_dt = eps*(dT3_dt-dT1_dt)*(m_ar*Cp_ar)/(m_nh3*Cp_nh3)
+    dTNH3s_dt = (dT3_dt-dT1_dt)*(m_ar*Cp_ar)/(m_nh3*Cp_nh3)
     
     return [dT1_dt, dT2_dt, dT3_dt, dTNH3s_dt]
 
@@ -46,7 +45,7 @@ T3_0   =  26 + 273
 t_span = (0, 365*86400)
 t_eval = np.linspace(*t_span, n)
 
-TNH3s_0 = TNH3_0+eps*(T3_0-T1_0)*(m_ar*Cp_ar)/(m_nh3*Cp_nh3)
+TNH3s_0 = TNH3_0 + (T3_0-T1_0)*(m_ar*Cp_ar)/(m_nh3*Cp_nh3)
 
 X_0 = [T1_0, T2_0, T3_0, TNH3s_0]
 
@@ -74,51 +73,90 @@ R_12_lin   = sum([R_e(T_1_minmax[0],T_2_minmax[0]), R_e(T_1_minmax[0],T_2_minmax
 R_23_lin   = sum([R_e(T_2_minmax[0],T_3_minmax[0]), R_e(T_2_minmax[0],T_3_minmax[1]), R_e(T_2_minmax[1],T_3_minmax[0]), R_e(T_2_minmax[1],T_3_minmax[1])])/4
 R_teto_lin = sum([R_teto(T_3_minmax[0], Tinf_0), R_teto(T_3_minmax[1], Tinf_0)])/2
 
-A11 = -(1/C_1)*(1/R_solo+1/R_12_lin+1/R_31)
-A12 = 1/(C_1*R_12_lin)
-A13 = -(1/C_1)*(1/R_31+m_ar*Cp_ar*eps)
-A14 = 0
+A11 = -(1/C_1)*(1/R_solo + 1/R_12_lin + 1/R_31 + m_ar*Cp_ar*eps)
+A21 = 1/(C_1*R_12_lin)
+A31 = -(1/C_1)*(1/R_31 - m_ar*Cp_ar*eps)
+A41 = 0
 
-A21 = 1/(C_2*R_12_lin)
-A22 = -(C_2)*(1/R_12_lin+1/R_23_lin)
-A23 = 1/(C_2*R_23_lin)
-A24 = 0
-
-A31 = 1/(C_3*R_31)
-A32 = 1/(C_3*R_23_lin)
-A33 = -(1/C_3)*(1/R_teto_lin+1/R_31+1/R_23_lin)
-A34 = 0
-
-A41 = -eps*C_mm
+A12 = 1/(C_2*R_12_lin)
+A22 = -1/(C_2)*(1/R_12_lin+1/R_23_lin)
+A32 = 1/(C_2*R_23_lin)
 A42 = 0
-A43 = eps*C_mm
+
+A13 = 1/(C_3*R_31)
+A23 = 1/(C_3*R_23_lin)
+A33 = -(1/C_3)*(1/R_teto_lin+1/R_31+1/R_23_lin)
+A43 = 0
+
+A14 = -eps*C_mm
+A24 = 0
+A34 = eps*C_mm
 A44 = 0
 
 B11 = m_ar*Cp_ar*eps/C_1
-B21 = 1/(C_1*R_solo)
+B12 = 1/(C_1*R_solo)
 
-B12 = 0
+B21 = 0
 B22 = 0
 
-B13 = 0
-B23 = 1/(C_3*R_teto_lin)
+B31 = 0
+B32 = 1/(C_3*R_teto_lin)
 
-B14 = 0
-B24 = 0
+B41 = 0
+B42 = 0
 
 
-A = np.array([[A11, A21, A31, A41],
-              [A21, A22, A23, A24],
-              [A31, A32, A33, A34],
-              [A41, A42, A43, A44]])
+A = np.array([[A11, A12, A13, A14],
+              [A12, A22, A32, A42],
+              [A13, A23, A33, A43],
+              [A14, A24, A34, A44]])
 
-B = np.array([[B11, B21],
-              [B12, B22],
-              [B13, B23],
-              [B14, B24]])
+B = np.array([[B11, B12],
+              [B21, B22],
+              [B31, B32],
+              [B41, B42]])
 
-C = np.eye(4)
-D = np.zeros([4,2])
+C11 = 1
+C12 = 1/R_12_lin
+C13 = 1/R_31
+C14 = -eps*C_mm
+
+C21 = 1/R_12_lin
+C22 = 1
+C23 = 1/R_23_lin
+C24 = 0
+
+C31 = 1/R_31
+C32 = 1/R_23_lin
+C33 = 1
+C34 = 1/R_31
+
+C41 = -eps*C_mm
+C42 = 0
+C43 = 1/R_31
+C44 = 1
+
+D11 = eps*C_mm
+D12 = 1/R_solo
+
+D21 = eps*C_mm*(1/R_23_lin-1/R_12_lin)
+D22 = 1/R_12_lin+1/R_solo+1/R_23_lin+1/R_teto_lin
+
+D31 = -eps*C_mm
+D32 = 1/R_teto_lin
+
+D41 = 1
+D42 = eps*C_mm*(-1/R_solo+1/R_teto_lin)
+
+C = np.array([[C11, C21, C31, C41],
+              [C12, C22, C32, C42],
+              [C13, C23, C33, C43],
+              [C14, C24, C34, C44]])
+
+D = np.array([[D11, D12],
+              [D21, D22],
+              [D31, D32],
+              [D41, D42]])
 
 sys = StateSpace(A, B, C, D)
 

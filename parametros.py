@@ -12,7 +12,7 @@ m_ar = 8.13e-2          # kg/s
 Cp_ar = 1.006           # kJ/kgK
 rho_ar = 1.2046         # kg/m³
 
-m_nh3 = 0.06            # kg/s
+m_nh3 = 0.10            # kg/s
 Cp_nh3 = 2.13           # kJ/kgK
 
 #A_T = 10               # m²
@@ -61,7 +61,7 @@ def R_e(T1, T2):        # T1 embaixo, T2 em cima
     return ((e_1+e_2)/(k*A))+1/(h_e*A)
 
 # R_31
-R_31 = m_ar*Cp_ar
+R_31 = 1/(m_ar*Cp_ar)
 
 C_1 = Cp_ar*rho_ar*V_1
 
