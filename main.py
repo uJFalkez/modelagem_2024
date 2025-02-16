@@ -1,21 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from scipy.signal import TransferFunction, bode, StateSpace, ss2tf
+from scipy.signal import TransferFunction, bode, StateSpace, ss2tf, tf2zpk
 from parametros import *
 from qrad import Q_rad
     
 TNH3_0  = -10 + 273
-Tinf_0  =  10 + 273
+Tinf_0  =  15 + 273
 
 n = 1000000
 
 # Definição do sistema de equações diferenciais
-def circuit_dynamics(t, y):
-    T1, T2, T3, TNH3s = y
+def Sistema(t, y):
+    T1, T2, T3, TNH3s, Tm = y
     
-    TNH3 = TNH3_0
-    Tinf = (10 + 273) + 3*np.sin(np.pi*t/86400) + 10*np.sin(2*np.pi*(t//86400)/365)
+    TNH3 = TNH3_0 - 1*np.sin(np.pi*t/86400) - 2*np.sin(2*np.pi*(t//86400)/365)
+    Tinf = Tinf_0 + 1*np.sin(np.pi*t/86400) + 3*np.sin(2*np.pi*(t//86400)/365)
     
     q_solo = (T1 - Tinf)/R_solo
     q_teto = (Tinf - T3)/R_teto(T3,Tinf)
@@ -32,34 +32,35 @@ def circuit_dynamics(t, y):
     dT1_dt = (1/n) * q_C1 / C_1
     dT2_dt = (1/n) * q_C2 / C_2
     dT3_dt = (1/n) * q_C3 / C_3
-    dTNH3s_dt = (dT3_dt-dT1_dt)*(m_ar*Cp_ar)/(m_nh3*Cp_nh3)
+    dTNH3s_dt = (dT3_dt-dT1_dt)*C_mm
+    dTm_dt = (dT1_dt+dT2_dt+dT3_dt)/3
     
-    return [dT1_dt, dT2_dt, dT3_dt, dTNH3s_dt]
+    return [dT1_dt, dT2_dt, dT3_dt, dTNH3s_dt, dTm_dt]
 
 # Condições iniciais
-T1_0   =  14 + 273
-T2_0   =  20 + 273
-T3_0   =  26 + 273
+T1_0   =  20 + 273
+T2_0   =  25 + 273
+T3_0   =  30 + 273
 
 # Intervalo de tempo e resolução
 t_span = (0, 365*86400)
 t_eval = np.linspace(*t_span, n)
 
-TNH3s_0 = TNH3_0 + (T3_0-T1_0)*(m_ar*Cp_ar)/(m_nh3*Cp_nh3)
+TNH3s_0 = TNH3_0 + (T3_0-T1_0)*C_mm
 
-X_0 = [T1_0, T2_0, T3_0, TNH3s_0]
+X_0 = [T1_0, T2_0, T3_0, TNH3s_0,(T1_0+T2_0+T3_0)/3]
 
 # Solução pelo método de Runge-Kutta 4/5
-sol = solve_ivp(circuit_dynamics, t_span, X_0, method='RK45', t_eval=t_eval)
+sol = solve_ivp(Sistema, t_span, X_0, method='RK45', t_eval=t_eval)
 
 # Plotagem dos resultados
 plt.figure(figsize=(10, 5))
-plt.plot(sol.t, sol.y[0], label='T1 (K)')
-plt.plot(sol.t, sol.y[1], label='T2 (K)')
-plt.plot(sol.t, sol.y[2], label='T3 (K)')
-plt.plot(sol.t, sol.y[3], label='TNH3s (K)')
-plt.xlabel('Tempo (s)')
-plt.ylabel('Temperatura (K)')
+plt.plot(sol.t/86400, sol.y[0]-273, label='T1 (ºC)')
+plt.plot(sol.t/86400, sol.y[1]-273, label='T2 (ºC)')
+plt.plot(sol.t/86400, sol.y[2]-273, label='T3 (ºC)')
+plt.plot(sol.t/86400, sol.y[3]-273, label='TNH3s (ºC)')
+plt.xlabel('Tempo (dias)')
+plt.ylabel('Temperatura (ºC)')
 plt.legend()
 plt.grid()
 plt.show()
@@ -90,7 +91,7 @@ A43 = 0
 
 A14 = C_mm*(1/(C_3*R_31)+1/C_1*(1/R_solo+1/R_12_lin+1/R_31))
 A24 = C_mm*(1/(C_3*R_23_lin)-1/(C_1*R_12_lin))
-A34 = C_mm*(-1/C_3*(1/R_teto_lin+1/R_31+1/R_23_lin)-1/C_1*(1+R_31-m_ar*Cp_ar*eps))
+A34 = C_mm*(-1/C_3*(1/R_teto_lin+1/R_31+1/R_23_lin)-1/C_1*(1/R_31-m_ar*Cp_ar*eps))
 A44 = 0
 
 B11 = m_ar*Cp_ar*eps/C_1
@@ -116,47 +117,57 @@ B = np.array([[B11, B12],
               [B31, B32],
               [B41, B42]])
 
-C11 = 1
-C12 = 1/R_12_lin
-C13 = 1/R_31
-C14 = -eps*C_mm
+C11 = 0
+C12 = 1/(C_1+C_2)*1/R_12_lin
+C13 = 1/(C_1+C_3)*1/R_31
+C14 = 0
 
-C21 = 1/R_12_lin
-C22 = 1
-C23 = 1/R_23_lin
+C21 = 1/(C_2+C_1)*1/R_12_lin
+C22 = 0
+C23 = 1/(C_2+C_3)*1/R_23_lin
 C24 = 0
 
-C31 = 1/R_31
-C32 = 1/R_23_lin
-C33 = 1
-C34 = 1/R_31
+C31 = 1/(C_3+C_1)*1/R_31
+C32 = 1/(C_3+C_2)*1/R_23_lin
+C33 = 0
+C34 = 0
 
-C41 = -eps*C_mm
+C41 = eps*m_ar*Cp_ar/C_1
 C42 = 0
-C43 = 1/R_31
-C44 = 1
+C43 = eps*m_ar*Cp_ar/C_3
+C44 = 0
 
-D11 = eps*C_mm
-D12 = 1/R_solo
+D11 = eps*m_ar*Cp_ar/C_1
+D12 = 1/(C_1*R_solo)
 
-D21 = eps*C_mm*(1/R_23_lin-1/R_12_lin)
-D22 = 1/R_12_lin+1/R_solo+1/R_23_lin+1/R_teto_lin
+D21 = eps*C_mm*(1/R_23_lin-1/R_12_lin)*1/C_2
+D22 = (1/R_12_lin+1/R_solo+1/R_23_lin+1/R_teto_lin)*1/C_2
 
-D31 = -eps*C_mm
-D32 = 1/R_teto_lin
+D31 = eps*m_ar*Cp_ar/C_3
+D32 = 1/(C_3*R_teto_lin)
 
 D41 = 1
-D42 = eps*C_mm*(-1/R_solo+1/R_teto_lin)
+D42 = eps*C_mm*(1/(C_1*R_solo)+1/(C_3*R_teto_lin))
 
-C = np.array([[C11, C21, C31, C41],
-              [C12, C22, C32, C42],
-              [C13, C23, C33, C43],
-              [C14, C24, C34, C44]])
+C = np.array([[C11, C12, C13, C14],
+              [C21, C22, C23, C24],
+              [C31, C32, C33, C34],
+              [C41, C42, C43, C44]])
+
+'''C = np.array([[0, 1, 1, eps*C_mm],
+              [1, 0, 1, 0],
+              [1, 1, 0, eps*C_mm],
+              [eps*C_mm, 0, eps*C_mm, 0]])'''
 
 D = np.array([[D11, D12],
               [D21, D22],
               [D31, D32],
               [D41, D42]])
+
+'''D = np.array([[eps*C_mm, 1],
+              [0, 0],
+              [eps*C_mm, 1],
+              [1, 0]])'''
 
 sys = StateSpace(A, B, C, D)
 
@@ -180,7 +191,6 @@ for i in range(4):
     plt.subplot(2, 1, 1)
     plt.semilogx(w, mag)
     plt.title(f"Diagrama de Bode para {title_list[i]}")
-    plt.xlabel("Frequência (rad/s)")
     plt.ylabel("Magnitude (dB)")
     plt.grid(True)
 
@@ -192,3 +202,9 @@ for i in range(4):
     plt.grid(True)
 
     plt.show()
+
+print('Zeros, polos e ganhos das funções:')
+for i in range(4):
+    z, p, k = tf2zpk(num[i], den)
+    print(f"T{i+1}:\nZeros: {z}\nPolos: {p}\nGanho: {k}\n")
+    
