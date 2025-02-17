@@ -154,20 +154,10 @@ C = np.array([[C11, C12, C13, C14],
               [C31, C32, C33, C34],
               [C41, C42, C43, C44]])
 
-'''C = np.array([[0, 1, 1, eps*C_mm],
-              [1, 0, 1, 0],
-              [1, 1, 0, eps*C_mm],
-              [eps*C_mm, 0, eps*C_mm, 0]])'''
-
 D = np.array([[D11, D12],
               [D21, D22],
               [D31, D32],
               [D41, D42]])
-
-'''D = np.array([[eps*C_mm, 1],
-              [0, 0],
-              [eps*C_mm, 1],
-              [1, 0]])'''
 
 sys = StateSpace(A, B, C, D)
 
