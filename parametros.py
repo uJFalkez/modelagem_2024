@@ -12,15 +12,16 @@ m_ar = 8.13e-2          # kg/s
 Cp_ar = 1.006           # kJ/kgK
 rho_ar = 1.2046         # kg/m³
 
-m_nh3 = 0.10            # kg/s
+m_nh3 = 0.1            # kg/s
 Cp_nh3 = 2.13           # kJ/kgK
 
 #A_T = 10               # m²
 #U_T = 120              # W/m²K
 NUT = (10*120)/(Cp_ar*m_ar)
 
-C_mm = (m_ar*Cp_ar)/(m_nh3*Cp_nh3)
-eps = (1-np.e**(-(1+C_mm)*NUT))/(1+C_mm)
+
+C_mm = (m_ar*Cp_ar)/(m_nh3*Cp_nh3)          # adim
+eps = (1-np.e**(-(1+C_mm)*NUT))/(1+C_mm)    # adim
 
 # R_solo
 # e_s = 0.1             # m
@@ -63,6 +64,7 @@ def R_e(T1, T2):        # T1 embaixo, T2 em cima
 # R_31
 R_31 = 1/(m_ar*Cp_ar)
 
+# Capacitâncias dos estratos
 C_1 = Cp_ar*rho_ar*V_1
 
 C_2 = Cp_ar*rho_ar*V_2
